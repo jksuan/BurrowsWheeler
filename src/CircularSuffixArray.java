@@ -1,3 +1,5 @@
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
 import edu.princeton.cs.algs4.BinaryStdIn;
 
@@ -28,16 +30,17 @@ public class CircularSuffixArray {
   
   // loop version, base on MSD algorithm
   private void sortByLoop(String s, char[] a, int lo, int hi, int d, int[] aux) {
-    Stack<Integer> low = new Stack<Integer>();
-    Stack<Integer> high = new Stack<Integer>();
-    Stack<Integer> deep = new Stack<Integer>();
-    low.push(lo);
-    high.push(hi);
-    deep.push(d);
-    while (!low.isEmpty()) {      
-      lo = low.pop();
-      hi = high.pop();
-      d = deep.pop();
+    List<int[]> track = new LinkedList<int[]>();
+    int[] item = new int[3];
+    item[0] = lo;
+    item[1] = hi;
+    item[2] = d;
+    track.add(item);
+    while (!track.isEmpty()) {      
+      int[] e = track.remove(0);
+      lo = e[0];
+      hi = e[1];
+      d = e[2];
       if (d > n - 1) 
         return;
       if (hi <= lo + CUTOFF) {
@@ -81,9 +84,11 @@ public class CircularSuffixArray {
         int h = lo + count[r + 1] - 1;
         if (h <= l)
           continue;
-        low.push(l);
-        high.push(h);
-        deep.push(d);
+        item = new int[3];
+        item[0] = l;
+        item[1] = h;
+        item[2] = d;
+        track.add(item);
       }         
     }   
   }
