@@ -20,81 +20,15 @@ public class CircularSuffixArray {
     if (s == null) throw new IllegalArgumentException("Input string must be not null");
     n = s.length();
     key = new int[n];
-    char[] a = new char[n];  // dth column character array
-    int[] aux = new int[n];
+    // char[] a = new char[n];  // dth column character array
     for (int i = 0; i < n; i++) {
       key[i] = i; // initiate index
     }    
-    sortByLoop(s, a, 0, n - 1, 0, aux);
+    sort(s, 0, n - 1, 0);
   }
-  
-  // loop version, base on MSD algorithm
-  private void sortByLoop(String s, char[] a, int lo, int hi, int d, int[] aux) {
-    List<int[]> track = new LinkedList<int[]>();
-    int[] item = new int[3];
-    item[0] = lo;
-    item[1] = hi;
-    item[2] = d;
-    track.add(item);
-    while (!track.isEmpty()) {      
-      int[] e = track.remove(0);
-      lo = e[0];
-      hi = e[1];
-      d = e[2];
-      if (d > n - 1) 
-        return;
-      if (hi <= lo + CUTOFF) {
-        insertionSort(s, lo, hi, d);
-        continue;
-      }    
-      
-      // build the dth column character array
-      for (int i = lo; i <= hi; i++) {
-        char c = charAt(s, d, key[i]);
-        a[i] = c;
-      }
-      
-      // compute frequency counts
-      int[] count = new int[R + 2];
-      for (int i = lo; i <= hi; i++) {
-        char c = charAt(s, d, key[i]);
-        count[c + 2]++ ;
-      }
-      d++;
-      
-      // transform counts to indices
-      for (int r = 0; r < R + 1; r++) {
-        count[r + 1] += count[r];
-      }
-     
-      // distribute
-      for (int i = lo; i <= hi; i++) {
-        int c = a[i];
-        aux[count[c + 1]++] = key[i];
-      }  
-     
-      // update 
-      for (int i = lo; i <= hi; i++) {
-        key[i] = aux[i - lo];
-      }      
-      
-      // record lo and hi
-      for (int r = 0; r < R + 1; r++) {
-        int l = lo + count[r];
-        int h = lo + count[r + 1] - 1;
-        if (h <= l)
-          continue;
-        item = new int[3];
-        item[0] = l;
-        item[1] = h;
-        item[2] = d;
-        track.add(item);
-      }         
-    }   
-  }
-  
+    
   // recursively version
-  private void sort(String s, char[] a, int lo, int hi, int d, int[] aux) {
+  private void sort(String s, int lo, int hi, int d) {
     if (d > n - 1) 
       return;
     if (hi <= lo + CUTOFF) {
@@ -102,46 +36,27 @@ public class CircularSuffixArray {
       return;
     }
     
-    // build the dth column character array
-    for (int i = lo; i <= hi; i++) {
-      char c = charAt(s, d, key[i]);
-      a[i] = c;
+    int lt = lo, gt = hi;
+    int v = charAt(s, d, key[lt]);
+    int i = lo + 1;
+    while (i <= gt) {
+      int t = charAt(s, d, key[i]);
+      if (t < v) 
+        exch(lt++, i++);
+      else if (t > v) 
+        exch(i, gt--);
+      else              
+        i++;
     }
-    
-    // compute frequency counts
-    int[] count = new int[R + 2];
-    for (int i = lo; i <= hi; i++) {
-      char c = charAt(s, d, key[i]);
-      count[c + 2]++ ;
-    }
-    
-    // transform counts to indices
-    for (int r = 0; r < R + 1; r++) {
-      count[r + 1] += count[r];
-    }
-    
-    // distribute
-    for (int i = lo; i <= hi; i++) {
-      int c = a[i];
-      aux[count[c + 1]++] = key[i];
-    }
-    
-    // update 
-    for (int i = lo; i <= hi; i++) {
-      key[i] = aux[i - lo];
-    }
-    
-    // recursively
-    for (int r = 0; r < R; r++) {
-      sort(s, a, lo + count[r], lo + count[r + 1] - 1, d + 1, aux);
-    }
+
+    // a[lo..lt-1] < v = a[lt..gt] < a[gt+1..hi]. 
+    sort(s, lo, lt-1, d);
+    sort(s, lt, gt, d+1);
+    sort(s, gt+1, hi, d);
   } 
   
   //get a char from input string
   private char charAt(String s, int d, int shift) {
-    assert d >= 0 && d <= n - 1;
-    assert shift >= 0 && shift <= n - 1;
-   
     int i = (d + shift) % n;
     return s.charAt(i);
   }
