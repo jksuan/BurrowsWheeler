@@ -45,7 +45,7 @@ public class CircularSuffixArray {
       
       if (d > n - 1) 
         return;
-      if (hi <= lo + CUTOFF || d > DEPTH_THRESH) {
+      if (hi <= lo + CUTOFF) {
         insertionSort(s, lo, hi, d);
         continue;
       }
