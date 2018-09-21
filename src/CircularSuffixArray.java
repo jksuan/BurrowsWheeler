@@ -7,6 +7,7 @@ public class CircularSuffixArray {
   
   private static final int R      = 256; // alphabet size of extended ASCII
   private static final int CUTOFF =  15;  // cutoff to insertion sort
+  private static final int DEPTH_THRESH = 10; 
   
   private int n;
   private int[] key; // index
@@ -29,31 +30,125 @@ public class CircularSuffixArray {
     
   // recursively version
   private void sort(String s, int lo, int hi, int d) {
-    if (d > n - 1) 
-      return;
-    if (hi <= lo + CUTOFF) {
-      insertionSort(s, lo, hi, d);
-      return;
-    }
+    List<int[]> track = new LinkedList<int[]>();
+    int[] item = new int[3];
+    item[0] = lo;
+    item[1] = hi;
+    item[2] = d;
+    track.add(item);
     
-    int lt = lo, gt = hi;
-    int v = charAt(s, d, key[lt]);
-    int i = lo + 1;
-    while (i <= gt) {
-      int t = charAt(s, d, key[i]);
-      if (t < v) 
-        exch(lt++, i++);
-      else if (t > v) 
-        exch(i, gt--);
-      else              
-        i++;
+    while (!track.isEmpty()) {
+      int[] e = track.remove(0);
+      lo = e[0];
+      hi = e[1];
+      d = e[2];
+      
+      if (d > n - 1) 
+        return;
+      if (hi <= lo + CUTOFF || d > DEPTH_THRESH) {
+        insertionSort(s, lo, hi, d);
+        continue;
+      }
+      
+      int lt = lo, gt = hi;
+      int v = charAt(s, d, key[lt]);
+      int i = lo + 1;
+      while (i <= gt) {
+        int t = charAt(s, d, key[i]);
+        if (t < v) 
+          exch(lt++, i++);
+        else if (t > v) 
+          exch(i, gt--);
+        else              
+          i++;
+      }
+      
+      item = new int[3];
+      item[0] = lo;
+      item[1] = lt - 1;
+      item[2] = d;
+      track.add(item);
+      item = new int[3];
+      item[0] = lt;
+      item[1] = gt;
+      item[2] = d + 1;
+      track.add(item);
+      item = new int[3];
+      item[0] = gt + 1;
+      item[1] = hi;
+      item[2] = d;
+      track.add(item);
+      
+      // a[lo..lt-1] < v = a[lt..gt] < a[gt+1..hi]. 
+      // sort(s, lo, lt-1, d);
+      // sort(s, lt, gt, d+1);
+      // sort(s, gt+1, hi, d);
     }
-
-    // a[lo..lt-1] < v = a[lt..gt] < a[gt+1..hi]. 
-    sort(s, lo, lt-1, d);
-    sort(s, lt, gt, d+1);
-    sort(s, gt+1, hi, d);
   } 
+  
+  private void sortByLoop(String s, char[] a, int lo, int hi, int d, int[] aux) {
+    List<int[]> track = new LinkedList<int[]>();
+    int[] item = new int[3];
+    item[0] = lo;
+    item[1] = hi;
+    item[2] = d;
+    track.add(item);
+    while (!track.isEmpty()) {      
+      int[] e = track.remove(0);
+      lo = e[0];
+      hi = e[1];
+      d = e[2];
+      if (d > n - 1) 
+        return;
+      if (hi <= lo + CUTOFF) {
+        insertionSort(s, lo, hi, d);
+        continue;
+      }    
+      
+      // build the dth column character array
+      for (int i = lo; i <= hi; i++) {
+        char c = charAt(s, d, key[i]);
+        a[i] = c;
+      }
+      
+      // compute frequency counts
+      int[] count = new int[R + 2];
+      for (int i = lo; i <= hi; i++) {
+        char c = charAt(s, d, key[i]);
+        count[c + 2]++ ;
+      }
+      d++;
+      
+      // transform counts to indices
+      for (int r = 0; r < R + 1; r++) {
+        count[r + 1] += count[r];
+      }
+     
+      // distribute
+      for (int i = lo; i <= hi; i++) {
+        int c = a[i];
+        aux[count[c + 1]++] = key[i];
+      }  
+     
+      // update 
+      for (int i = lo; i <= hi; i++) {
+        key[i] = aux[i - lo];
+      }      
+      
+      // record lo and hi
+      for (int r = 0; r < R + 1; r++) {
+        int l = lo + count[r];
+        int h = lo + count[r + 1] - 1;
+        if (h <= l)
+          continue;
+        item = new int[3];
+        item[0] = l;
+        item[1] = h;
+        item[2] = d;
+        track.add(item);
+      }         
+    }   
+  }
   
   //get a char from input string
   private char charAt(String s, int d, int shift) {
