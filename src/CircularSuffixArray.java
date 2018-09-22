@@ -7,7 +7,7 @@ public class CircularSuffixArray {
   
   private static final int R      = 256; // alphabet size of extended ASCII
   private static final int CUTOFF =  15;  // cutoff to insertion sort
-  private static final int DEPTH_THRESH = 10; 
+  private static final int STACK_SIZE = 1000;
   
   private int n;
   private int[] key; // index
@@ -18,17 +18,17 @@ public class CircularSuffixArray {
    * @param <code>s</code> - input string 
    */
   public CircularSuffixArray(String s) {
-    if (s == null) throw new IllegalArgumentException("Input string must be not null");
+    if (s == null) throw new IllegalArgumentException("Input string must be not null");    
     n = s.length();
     key = new int[n];
-    // char[] a = new char[n];  // dth column character array
+    
     for (int i = 0; i < n; i++) {
       key[i] = i; // initiate index
     }    
     sort(s, 0, n - 1, 0);
   }
     
-  // recursively version
+  // loop version
   private void sort(String s, int lo, int hi, int d) {
     List<int[]> track = new LinkedList<int[]>();
     int[] item = new int[3];
@@ -44,7 +44,7 @@ public class CircularSuffixArray {
       d = e[2];
       
       if (d > n - 1) 
-        return;
+        continue;
       if (hi <= lo + CUTOFF) {
         insertionSort(s, lo, hi, d);
         continue;
@@ -77,12 +77,7 @@ public class CircularSuffixArray {
       item[0] = gt + 1;
       item[1] = hi;
       item[2] = d;
-      track.add(item);
-      
-      // a[lo..lt-1] < v = a[lt..gt] < a[gt+1..hi]. 
-      // sort(s, lo, lt-1, d);
-      // sort(s, lt, gt, d+1);
-      // sort(s, gt+1, hi, d);
+      track.add(item);   
     }
   } 
   
@@ -98,8 +93,9 @@ public class CircularSuffixArray {
       lo = e[0];
       hi = e[1];
       d = e[2];
+      
       if (d > n - 1) 
-        return;
+        continue;
       if (hi <= lo + CUTOFF) {
         insertionSort(s, lo, hi, d);
         continue;
@@ -107,14 +103,14 @@ public class CircularSuffixArray {
       
       // build the dth column character array
       for (int i = lo; i <= hi; i++) {
-        char c = charAt(s, d, key[i]);
-        a[i] = c;
+        int c = charAt(s, d, key[i]);
+        a[i] = (char) (c & 0xFF);
       }
       
       // compute frequency counts
       int[] count = new int[R + 2];
       for (int i = lo; i <= hi; i++) {
-        char c = charAt(s, d, key[i]);
+        int c = charAt(s, d, key[i]);
         count[c + 2]++ ;
       }
       d++;
@@ -151,7 +147,9 @@ public class CircularSuffixArray {
   }
   
   //get a char from input string
-  private char charAt(String s, int d, int shift) {
+  private int charAt(String s, int d, int shift) {
+    if (d == n)  
+      return -1;
     int i = (d + shift) % n;
     return s.charAt(i);
   }
@@ -175,8 +173,8 @@ public class CircularSuffixArray {
   // c1 = a[v], c2 = a[w] at character d
   private boolean less(String s, int v, int w, int d) { 
     for (int i = d; i < length(); i++) {
-      char c1 = charAt(s, i, index(v));
-      char c2 = charAt(s, i, index(w));
+      int c1 = charAt(s, i, index(v));
+      int c2 = charAt(s, i, index(w));
       if (c1 < c2) return true; 
       if (c1 > c2) return false;
     }

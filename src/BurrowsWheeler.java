@@ -11,6 +11,12 @@ public class BurrowsWheeler {
    */
   public static void transform() {
     String input = BinaryStdIn.readString(); 
+    
+    // add sentinel char to the end of input string for sorting suffixes effectively
+    // more information see the paper 
+    // Second step algorithms in the Burrows–Wheeler compression algorithm by Sebastian Deorowicz
+    input = input + '\0';  
+    
     CircularSuffixArray suffix = new CircularSuffixArray(input);
     int first = -1;
     int[] t = new int[input.length()];
