@@ -5,9 +5,12 @@ import edu.princeton.cs.algs4.BinaryStdIn;
 
 public class CircularSuffixArray {
   
-  private static final int R      = 256; // alphabet size of extended ASCII
   private static final int CUTOFF =  15;  // cutoff to insertion sort
-  private static final int STACK_SIZE = 1000;
+  private static final int STACK_SIZE = 3000;
+  
+  private final int[] stack_ll = new int[STACK_SIZE]; // 4000 byte
+  private final int[] stack_hh = new int[STACK_SIZE]; // 4000 byte
+  private final int[] stack_dd = new int[STACK_SIZE]; // 4000 byte
   
   private int n;
   private int[] key; // index
@@ -28,20 +31,20 @@ public class CircularSuffixArray {
     sort(s, 0, n - 1, 0);
   }
     
-  // loop version
-  private void sort(String s, int lo, int hi, int d) {
-    List<int[]> track = new LinkedList<int[]>();
-    int[] item = new int[3];
-    item[0] = lo;
-    item[1] = hi;
-    item[2] = d;
-    track.add(item);
+  // loop version , based on 3-way string quick sort
+  private void sort(String s, int lo, int hi, int d) {    
+    final int[] stack_ll = this.stack_ll; 
+    final int[] stack_hh = this.stack_hh;
+    final int[] stack_dd = this.stack_dd;
     
-    while (!track.isEmpty()) {
-      int[] e = track.remove(0);
-      lo = e[0];
-      hi = e[1];
-      d = e[2];
+    stack_ll[0] = lo;
+    stack_hh[0] = hi;
+    stack_dd[0] = d;
+    
+    for (int sp = 1; --sp >= 0;) {
+      lo = stack_ll[sp];
+      hi = stack_hh[sp];
+      d  = stack_dd[sp];
       
       if (d > n - 1) 
         continue;
@@ -63,87 +66,37 @@ public class CircularSuffixArray {
           i++;
       }
       
-      item = new int[3];
-      item[0] = lo;
-      item[1] = lt - 1;
-      item[2] = d;
-      track.add(item);
-      item = new int[3];
-      item[0] = lt;
-      item[1] = gt;
-      item[2] = d + 1;
-      track.add(item);
-      item = new int[3];
-      item[0] = gt + 1;
-      item[1] = hi;
-      item[2] = d;
-      track.add(item);   
+      if (lt - 1 > lo) {
+        stack_ll[sp] = lo;
+        stack_hh[sp] = lt - 1;
+        stack_dd[sp] = d;
+        sp++;
+      }
+      
+      if (gt > lt) {
+        stack_ll[sp] = lt;
+        stack_hh[sp] = gt;
+        stack_dd[sp] = d + 1;
+        sp++;
+      }
+      
+      if (hi > gt + 1) {
+        stack_ll[sp] = gt + 1;
+        stack_hh[sp] = hi;
+        stack_dd[sp] = d;
+        sp++;
+      }  
     }
   } 
   
-  private void sortByLoop(String s, char[] a, int lo, int hi, int d, int[] aux) {
-    List<int[]> track = new LinkedList<int[]>();
-    int[] item = new int[3];
-    item[0] = lo;
-    item[1] = hi;
-    item[2] = d;
-    track.add(item);
-    while (!track.isEmpty()) {      
-      int[] e = track.remove(0);
-      lo = e[0];
-      hi = e[1];
-      d = e[2];
-      
-      if (d > n - 1) 
-        continue;
-      if (hi <= lo + CUTOFF) {
-        insertionSort(s, lo, hi, d);
-        continue;
-      }    
-      
-      // build the dth column character array
-      for (int i = lo; i <= hi; i++) {
-        int c = charAt(s, d, key[i]);
-        a[i] = (char) (c & 0xFF);
-      }
-      
-      // compute frequency counts
-      int[] count = new int[R + 2];
-      for (int i = lo; i <= hi; i++) {
-        int c = charAt(s, d, key[i]);
-        count[c + 2]++ ;
-      }
-      d++;
-      
-      // transform counts to indices
-      for (int r = 0; r < R + 1; r++) {
-        count[r + 1] += count[r];
-      }
-     
-      // distribute
-      for (int i = lo; i <= hi; i++) {
-        int c = a[i];
-        aux[count[c + 1]++] = key[i];
-      }  
-     
-      // update 
-      for (int i = lo; i <= hi; i++) {
-        key[i] = aux[i - lo];
-      }      
-      
-      // record lo and hi
-      for (int r = 0; r < R + 1; r++) {
-        int l = lo + count[r];
-        int h = lo + count[r + 1] - 1;
-        if (h <= l)
-          continue;
-        item = new int[3];
-        item[0] = l;
-        item[1] = h;
-        item[2] = d;
-        track.add(item);
-      }         
-    }   
+  private void fpush(int sp, int lo, int hi, int d) {
+    stack_ll[sp] = lo;
+    stack_hh[sp] = hi;
+    stack_dd[sp] = d;    
+  }
+  
+  private int[] fpop(int sp) {
+    return new int[] { stack_ll[sp], stack_hh[sp], stack_dd[sp] };
   }
   
   //get a char from input string
