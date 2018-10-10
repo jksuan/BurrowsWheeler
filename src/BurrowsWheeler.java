@@ -1,6 +1,32 @@
 import edu.princeton.cs.algs4.BinaryStdIn;
 import edu.princeton.cs.algs4.BinaryStdOut;
 
+/** 
+ * The Burrows–Wheeler compression algorithm consists of three algorithmic components, 
+ * and Burrows–Wheeler transform(BWT) is one of them, and the {@code BurrowsWheeler} class
+ * is to implement BWT.
+ * <p>
+ * The goal of BWT is not to compress a message, 
+ * but rather to transform it into a form that is more amenable to be compressed 
+ * by Huffman or other data compression algorithm. 
+ * The transform rearranges the characters in the input so that 
+ * there are lots of clusters with repeated characters, 
+ * but in such a way that it is still possible to recover the original input.
+ * <p>
+ * These three algorithmic components are applied in succession:
+ * <p>
+ * 1.Burrows–Wheeler transform.
+ * <p>
+ * 2.Move-to-front encoding
+ * <p>
+ * 3.Huffman compression or Run-length encoding compression
+ * <p>
+ * More info in directory 
+ * ../assignment5_burrows/specifications/Burrows–Wheeler Data Compression.html
+ * 
+ * @author chih kai
+ */
+
 public class BurrowsWheeler {
   
   private static final int R = 256;
@@ -10,13 +36,8 @@ public class BurrowsWheeler {
    * reading from standard input and writing to standard output
    */
   public static void transform() {
-    String input = BinaryStdIn.readString(); 
-    
-    // add sentinel char to the end of input string for sorting suffixes effectively
-    // more information see the paper 
-    // Second step algorithms in the Burrows–Wheeler compression algorithm by Sebastian Deorowicz
-    input = input + '\0';  
-    
+    String input = BinaryStdIn.readString();     
+       
     CircularSuffixArray suffix = new CircularSuffixArray(input);
     int first = -1;
     int[] t = new int[input.length()];

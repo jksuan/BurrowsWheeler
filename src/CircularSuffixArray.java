@@ -1,19 +1,42 @@
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Stack;
 import edu.princeton.cs.algs4.BinaryStdIn;
 
+/**
+ * The {@code CircularSuffixArray} class provides the key component for 
+ * the Burrows–Wheeler transform. 
+ * <p>
+ * Circular suffix array is a sorted array of each character of 
+ * a string moving one position to the left.
+ * As an example, consider the string "ABRACADABRA!" of length 12 :
+ * <p>
+ *   i       Original Suffixes            Sorted Suffixes         index[i]
+ *  --    -----------------------     -----------------------    --------
+ *   0    A B R A C A D A B R A !     ! A B R A C A D A B R A       11
+ *   1    B R A C A D A B R A ! A     A ! A B R A C A D A B R       10
+ *   2    R A C A D A B R A ! A B     A B R A ! A B R A C A D        7
+ *   3    A C A D A B R A ! A B R     A B R A C A D A B R A !        0
+ *   4    C A D A B R A ! A B R A     A C A D A B R A ! A B R        3
+ *   5    A D A B R A ! A B R A C     A D A B R A ! A B R A C        5
+ *   6    D A B R A ! A B R A C A     B R A ! A B R A C A D A        8
+ *   7    A B R A ! A B R A C A D     B R A C A D A B R A ! A        1
+ *   8    B R A ! A B R A C A D A     C A D A B R A ! A B R A        4
+ *   9    R A ! A B R A C A D A B     D A B R A ! A B R A C A        6
+ *  10    A ! A B R A C A D A B R     R A ! A B R A C A D A B        9
+ *  11    ! A B R A C A D A B R A     R A C A D A B R A ! A B        2
+ * <p>
+ * The index[i] to be the index of the original suffix that appears ith in the sorted array. 
+ * For example, index[11] = 2 means that the 2nd original suffix appears 11th in the sorted order.
+ * <p>
+ * More info in directory 
+ * ../assignment5_burrows/specifications/Burrows–Wheeler Data Compression.html
+ * 
+ * @author Chih kai 
+ */
+
 public class CircularSuffixArray {
-  
-  private static final int CUTOFF =  15;  // cutoff to insertion sort
-  private static final int STACK_SIZE = 3000;
-  
-  private final int[] stack_ll = new int[STACK_SIZE]; // 4000 byte
-  private final int[] stack_hh = new int[STACK_SIZE]; // 4000 byte
-  private final int[] stack_dd = new int[STACK_SIZE]; // 4000 byte
-  
+    
   private int n;
-  private int[] key; // index
+  private int[] index;
+  private Manber manber;
   
   /**
    * Circular suffix array of s
@@ -21,84 +44,10 @@ public class CircularSuffixArray {
    * @param <code>s</code> - input string 
    */
   public CircularSuffixArray(String s) {
-    if (s == null) throw new IllegalArgumentException("Input string must be not null");    
-    n = s.length();
-    key = new int[n];
+    if (s == null) throw new IllegalArgumentException("Input string must be not null");  
+    manber = new Manber(s);  // base on ManberMyers sort       
+  }     
     
-    for (int i = 0; i < n; i++) {
-      key[i] = i; // initiate index
-    }    
-    sort(s, 0, n - 1, 0);
-  }
-    
-  // loop version , based on 3-way string quick sort
-  private void sort(String s, int lo, int hi, int d) {    
-    final int[] stack_ll = this.stack_ll; 
-    final int[] stack_hh = this.stack_hh;
-    final int[] stack_dd = this.stack_dd;
-    
-    stack_ll[0] = lo;
-    stack_hh[0] = hi;
-    stack_dd[0] = d;
-    
-    for (int sp = 1; --sp >= 0;) {
-      lo = stack_ll[sp];
-      hi = stack_hh[sp];
-      d  = stack_dd[sp];
-      
-      if (d > n - 1) 
-        continue;
-      if (hi <= lo + CUTOFF) {
-        insertionSort(s, lo, hi, d);
-        continue;
-      }
-      
-      int lt = lo, gt = hi;
-      int v = charAt(s, d, key[lt]);
-      int i = lo + 1;
-      while (i <= gt) {
-        int t = charAt(s, d, key[i]);
-        if (t < v) 
-          exch(lt++, i++);
-        else if (t > v) 
-          exch(i, gt--);
-        else              
-          i++;
-      }
-      
-      if (lt - 1 > lo) {
-        stack_ll[sp] = lo;
-        stack_hh[sp] = lt - 1;
-        stack_dd[sp] = d;
-        sp++;
-      }
-      
-      if (gt > lt) {
-        stack_ll[sp] = lt;
-        stack_hh[sp] = gt;
-        stack_dd[sp] = d + 1;
-        sp++;
-      }
-      
-      if (hi > gt + 1) {
-        stack_ll[sp] = gt + 1;
-        stack_hh[sp] = hi;
-        stack_dd[sp] = d;
-        sp++;
-      }  
-    }
-  } 
-  
-  private void fpush(int sp, int lo, int hi, int d) {
-    stack_ll[sp] = lo;
-    stack_hh[sp] = hi;
-    stack_dd[sp] = d;    
-  }
-  
-  private int[] fpop(int sp) {
-    return new int[] { stack_ll[sp], stack_hh[sp], stack_dd[sp] };
-  }
-  
   //get a char from input string
   private int charAt(String s, int d, int shift) {
     if (d == n)  
@@ -115,15 +64,14 @@ public class CircularSuffixArray {
         exch(j, j-1);
   }
 
-  // exchange key[i] and key[j] if a[i] < a[j]
+  // swap pointer sort indices
   private void exch(int i, int j) {
-    int temp = key[i];
-    key[i] = key[j];
-    key[j] = temp;
+    int temp = index[i];
+    index[i] = index[j];
+    index[j] = temp;
   }
 
   // is c1 less than c2, starting at character d
-  // c1 = a[v], c2 = a[w] at character d
   private boolean less(String s, int v, int w, int d) { 
     for (int i = d; i < length(); i++) {
       int c1 = charAt(s, i, index(v));
@@ -140,7 +88,7 @@ public class CircularSuffixArray {
    * @return <code>n</code> - length of input string
    */
   public int length() {
-    return n;
+    return manber.length();
   }
   
   
@@ -155,7 +103,7 @@ public class CircularSuffixArray {
   public int index(int i) {
     if (i < 0 || i > length() - 1) 
       throw new IllegalArgumentException("Argument i must be between 0 and length() - 1");
-    return key[i];
+    return manber.index(i);
   }
    
   // Unit testing (required)

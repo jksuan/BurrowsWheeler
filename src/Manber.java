@@ -4,7 +4,7 @@
  *  Dependencies: StdIn.java
  *  
  *  Reads a text corpus from stdin and sorts the suffixes
- *  in subquadratic time using a variant of Manber's algorithm.
+ *  in subquadratic(O(N*lgN*lgN)) time using a variant of Manber's algorithm.
  *
  ******************************************************************************/
 
@@ -149,7 +149,28 @@ public class Manber {
         index[i] = index[j];
         index[j] = swap;
     }
+    
+    // quicksort with 3-way do much better when keys are duplicated
+    private void quick3way(int lo, int hi) {
+      if (hi <= lo) 
+        return;
+      int lt = lo, gt = hi;
+      int v = index[lo];
+      int i = lo;
+      while (i <= gt) {
+          int t = index[i];
+          if (less(t, v)) 
+            exch(lt++, i++);
+          else if (less(v, t)) 
+            exch(i, gt--);
+          else              
+            i++;
+      }
 
+      // a[lo..lt-1] < v = a[lt..gt] < a[gt+1..hi]. 
+      quick3way(lo, lt-1);
+      quick3way(gt+1, hi);
+    }
 
     // SUGGEST REPLACING WITH 3-WAY QUICKSORT SINCE ELEMENTS ARE
     // RANKS AND THERE MAY BE DUPLICATES

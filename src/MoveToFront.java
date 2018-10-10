@@ -1,6 +1,24 @@
 import edu.princeton.cs.algs4.BinaryStdIn;
 import edu.princeton.cs.algs4.BinaryStdOut;
 
+/**
+ * The {@code MoveToFront} is one of the three Burrows–Wheeler compression algorithm components.
+ * <p> 
+ * Three Burrows–Wheeler compression algorithm components, which are applied in succession:
+ * <p>
+ * 1.Burrows–Wheeler transform.
+ * <p>
+ * 2.Move-to-front encoding
+ * <p>
+ * 3.Huffman compression or Run-length encoding compression
+ * <p>
+ * More info in directory 
+ * ../assignment5_burrows/specifications/Burrows–Wheeler Data Compression.html
+ * 
+ * @author chih kai
+ *
+ */
+
 public class MoveToFront {
   
   //alphabet size of extended ASCII
@@ -11,8 +29,7 @@ public class MoveToFront {
   
   /**
    * Apply move-to-front encoding, 
-   * reading from standard input and writing to standard output
-   * 
+   * reading from standard input and writing to standard output   * 
    */  
   public static void encode() {
     String s = BinaryStdIn.readString();
@@ -38,8 +55,7 @@ public class MoveToFront {
 
   /**
    * Apply move-to-front decoding, 
-   * reading from standard input and writing to standard output
-   * 
+   * reading from standard input and writing to standard output   * 
    */
   public static void decode() {
     char[] seq = new char[R];
